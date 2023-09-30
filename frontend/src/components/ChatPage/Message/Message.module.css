@@ -1,0 +1,28 @@
+
+.message {
+	@apply bg-transparent mb-5
+}
+
+.message_from {
+	@apply text-white;
+	font-size: 20px;
+}
+
+.message_content {
+	@apply bg-blue-700 text-white p-2 rounded-md w-min min-w-max;
+	font-size: 20px;
+}
+
+.my_message {
+	@apply bg-transparent mb-5 flex flex-col justify-center items-end
+}
+
+.my_message_from {
+	@apply text-white;
+	font-size: 20px;
+}
+
+.my_message_content {
+	@apply bg-orange-700 text-white p-2 rounded-md w-min;
+	font-size: 20px;
+}

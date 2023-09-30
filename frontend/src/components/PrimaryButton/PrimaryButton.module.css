@@ -1,0 +1,9 @@
+
+.button {
+	@apply rounded-md bg-blue-700 mt-2 mb-2 pl-5 pr-5 pt-2 pb-2 w-full hover:bg-blue-900 transition-all;
+}
+
+.button_text {
+	@apply text-white font-medium;
+	letter-spacing: 2px;
+}

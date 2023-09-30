@@ -1,0 +1,9 @@
+
+.room {
+	@apply bg-blue-500 mb-5 mt-5 p-2 rounded-lg
+}
+
+.room_name {
+	@apply text-white font-medium;
+	font-size: 20px;
+}
