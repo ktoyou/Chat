@@ -3,7 +3,7 @@
 }
 
 .login_layout_wrapper {
-	@apply bg-black p-10 rounded-xl bg-blue-950
+	@apply bg-black p-5 rounded-xl bg-blue-950
 }
 
 .login_layout_input {
