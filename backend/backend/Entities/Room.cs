@@ -4,6 +4,9 @@ namespace backend.Entities;
 
 public class Room
 {
+    [JsonProperty("maxUsers")]
+    public int MaxUsers { get => 10; }
+    
     [JsonProperty("id")]
     public int Id { get; set; }
 

@@ -19,6 +19,8 @@ const RoomList = ({ rooms }: IRoomListProps): ReactElement => {
       //Todo: Выводим ошибку
     } else if (status == ApiResponseType.RoomNotFound) {
       //Todo: Выводим ошибку
+    } else if (status == ApiResponseType.RoomFull) {
+      //Todo: Выводим ошибку
     } else {
       const room = JSON.parse(data);
       clientContext.onRoomJoined(room);

@@ -1,6 +1,6 @@
 
 .message {
-	@apply bg-transparent mb-5
+	@apply bg-transparent mb-5 flex flex-col justify-center items-start
 }
 
 .message_from {
@@ -9,7 +9,7 @@
 }
 
 .message_content {
-	@apply bg-blue-700 text-white p-2 rounded-md w-min min-w-max;
+	@apply bg-blue-700 text-white p-2 rounded-xl rounded-tl-none max-w-full break-words;
 	font-size: 20px;
 }
 
@@ -23,6 +23,6 @@
 }
 
 .my_message_content {
-	@apply bg-orange-700 text-white p-2 rounded-md w-min;
+	@apply bg-orange-700 text-white p-2 rounded-xl rounded-tr-none max-w-full break-words;
 	font-size: 20px;
 }
