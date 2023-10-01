@@ -1,0 +1,4 @@
+
+.room {
+	@apply bg-blue-900 mb-5 mt-5 pl-4 pr-4 pt-2 pb-2 rounded-lg h-32 flex justify-center items-center hover:bg-blue-500 transition-all 
+}

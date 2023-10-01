@@ -1,5 +1,5 @@
 
 .input {
-	@apply p-2 bg-transparent border-2 border-white rounded-md text-white outline-none;
+	@apply p-2 bg-transparent border-2 border-white rounded-md text-white outline-none w-full;
 	text-decoration: none;
 }

@@ -4,6 +4,8 @@ enum ApiResponseType {
   UserNotFound = 2,
   RoomNotFound = 3,
   RoomFull = 4,
+  RoomCreated = 5,
+  RoomExists = 6,
 }
 
 export default ApiResponseType;

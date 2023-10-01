@@ -86,6 +86,7 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
           onOpenEmojiPanel={() => setEmojiPanelOpen(!emojiPanelOpen)}
         />
         <input
+          placeholder="Написать сообщение..."
           value={messageContent}
           onKeyDown={onKeyDownMessageInput}
           onChange={(e) => setMessageContent(e.target.value)}

@@ -10,25 +10,17 @@ public class ChatHub : Hub
 
     private const string NotInTheRoom = "NotInTheRoom";
     
-    private static List<User> _users = new List<User>();
-
-    private static List<Room> _rooms = new List<Room>()
+    private static List<User> _users = new List<User>()
     {
-        new Room()
+        new User()
         {
+            ConnectionId = string.Empty,
             Id = 0,
-            Name = "Room #1",
-            Users = new List<User>(),
-            Messages = new List<Message>()
-        },
-        new Room()
-        {
-            Id = 1,
-            Name = "Room #2",
-            Users = new List<User>(),
-            Messages = new List<Message>()
+            Name = "System"
         }
     };
+
+    private static List<Room> _rooms = new List<Room>();
 
     public async Task SendMessageToRoom(int roomId, string from, string content)
     {
@@ -146,7 +138,31 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)Errors.WithoutErrors);
         await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
     }
-    
+
+    public async Task CreateRoom(string name)
+    {
+        if(name == string.Empty) return;
+        
+        var findRoom = _rooms.FirstOrDefault(r => r.Name == name);
+        if (findRoom != null)
+        {
+            await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", Errors.RoomExists);
+            return;
+        }
+        
+        var room = new Room()
+        {
+            Name = name,
+            Id = GetIncrementedRoomId(),
+            Messages = new List<Message>(),
+            Users = new List<User>()
+        };
+
+        _rooms.Add(room);
+        await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", Errors.RoomCreated);
+        await SendRoomsToAllClientsAsync();
+    }
+
     public async Task GetRooms() => 
         await Clients.Caller.SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(_rooms));
 
@@ -199,15 +215,25 @@ public class ChatHub : Hub
         return id;
     }
 
+    private int GetIncrementedRoomId()
+    {
+        int id;
+        if (_rooms.Count == 0) id = 0;
+        else
+        {
+            id = _rooms.Select(u => u.Id).Max();
+            id++;
+        }
+
+        return id;
+    }
+
     private async Task SendSystemMessageAsync(Room room, User user, string msg)
     {
         var message = new Message()
         {
             Content = msg,
-            From = new User()
-            {
-                Name = "Admin"
-            },
+            From = _users.FirstOrDefault(u => u.Name == "System"),
             Id = Guid.NewGuid()
         };
         room.Messages.Add(message);

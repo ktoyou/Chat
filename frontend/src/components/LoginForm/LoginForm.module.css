@@ -1,17 +1,20 @@
 .login_layout {
-	@apply flex flex-col justify-center items-center h-screen 
+	@apply flex flex-col justify-center items-center h-screen
+}
+
+.login_layout_wrapper {
+	@apply bg-black p-10 rounded-xl bg-blue-950
 }
 
 .login_layout_input {
-	@apply flex flex-col
+	@apply flex flex-col w-80
 }
 
-.login_layout_input_label {
-	@apply text-white font-medium
+.login_layout_primary_input {
+	@apply mb-2
 }
 
 .login_layout_title {
-	@apply text-white font-bold;
-	letter-spacing: 3px;
+	@apply text-white font-bold mb-12 text-center;
 	font-size: 30px;
 }

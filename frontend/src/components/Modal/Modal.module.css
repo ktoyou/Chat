@@ -1,0 +1,22 @@
+
+.modal_layout {
+	@apply absolute top-0 left-0 h-full w-full flex justify-center items-center z-10
+}
+
+.modal_layout::before {
+	@apply bg-black absolute top-0 left-0 h-full w-full flex justify-center items-center opacity-50 z-20;
+	content: "";
+}
+
+.modal {
+	@apply p-5 bg-slate-800 rounded-md z-20
+}
+
+.modal_title {
+	@apply text-white font-medium mb-5 flex justify-between;
+	font-size: 25px;
+}
+
+.modal_close {
+	@apply text-center items-center justify-center flex
+}

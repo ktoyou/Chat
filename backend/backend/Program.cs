@@ -14,9 +14,9 @@ builder.Services.AddSignalR(builder =>
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
-        builder =>
+        b =>
         {
-            builder.WithOrigins("")
+            b.WithOrigins(builder.Configuration.GetValue<string>("Origin") ?? string.Empty)
                 .AllowAnyHeader()
                 .WithMethods("GET", "POST")
                 .AllowCredentials();

@@ -4,13 +4,13 @@
 }
 
 .message_from {
-	@apply text-white;
-	font-size: 20px;
+	@apply text-white font-medium;
+	font-size: 15px;
 }
 
 .message_content {
 	@apply bg-blue-700 text-white p-2 rounded-xl rounded-tl-none max-w-full break-words;
-	font-size: 20px;
+	font-size: 18px;
 }
 
 .my_message {
@@ -18,11 +18,11 @@
 }
 
 .my_message_from {
-	@apply text-white;
-	font-size: 20px;
+	@apply text-white font-medium;
+	font-size: 15px;
 }
 
 .my_message_content {
 	@apply bg-orange-700 text-white p-2 rounded-xl rounded-tr-none max-w-full break-words;
-	font-size: 20px;
+	font-size: 18px;
 }

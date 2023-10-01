@@ -31,35 +31,22 @@ const App = (): ReactElement => {
     Cookies.remove("name");
   };
 
+  let content;
   if (logged && currentRoom === null) {
-    return (
-      <WebSocketContext.wsContext.Provider value={WebSocketContext.connection}>
-        <ClientContext.Context.Provider value={ClientContext.Client}>
-          <Layout>
-            <RoomsPage />
-          </Layout>
-        </ClientContext.Context.Provider>
-      </WebSocketContext.wsContext.Provider>
-    );
+    content = <RoomsPage />;
   } else if (!logged) {
-    return (
-      <WebSocketContext.wsContext.Provider value={WebSocketContext.connection}>
-        <ClientContext.Context.Provider value={ClientContext.Client}>
-          <Layout>
-            <LoginForm />
-          </Layout>
-        </ClientContext.Context.Provider>
-      </WebSocketContext.wsContext.Provider>
-    );
+    content = <LoginForm />;
   } else {
-    return (
-      <WebSocketContext.wsContext.Provider value={WebSocketContext.connection}>
-        <ClientContext.Context.Provider value={ClientContext.Client}>
-          <Layout>{currentRoom && <ChatPage room={currentRoom} />}</Layout>
-        </ClientContext.Context.Provider>
-      </WebSocketContext.wsContext.Provider>
-    );
+    content = currentRoom && <ChatPage room={currentRoom} />;
   }
+
+  return (
+    <WebSocketContext.wsContext.Provider value={WebSocketContext.connection}>
+      <ClientContext.Context.Provider value={ClientContext.Client}>
+        <Layout>{content}</Layout>
+      </ClientContext.Context.Provider>
+    </WebSocketContext.wsContext.Provider>
+  );
 };
 
 export default App;

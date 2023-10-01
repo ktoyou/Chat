@@ -1,6 +1,6 @@
 
 .room {
-	@apply bg-blue-500 mb-5 mt-5 p-2 rounded-lg
+	@apply bg-blue-500 mb-5 mt-5 pl-4 pr-4 pt-2 pb-2 rounded-lg h-32
 }
 
 .room_name {
@@ -9,5 +9,5 @@
 }
 
 .room_online {
-	@apply text-white opacity-50
+	@apply text-white opacity-70
 }

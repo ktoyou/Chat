@@ -2,3 +2,8 @@
 .rooms_layout {
 	@apply h-screen flex justify-center items-center;
 }
+
+.rooms_layout_title {
+	@apply text-white text-center;
+	font-size: 30px;
+}
