@@ -23,6 +23,7 @@ const Room = ({ room }: IRoomProps): ReactElement => {
         <span className={styles.room_name}>{room.name}</span>
       </div>
       <PrimaryButton onClick={joinRoomHandler} text="Зайти в комнату" />
+      <p className={styles.room_online}>В онлайне: {room.users.length}</p>
     </div>
   );
 };

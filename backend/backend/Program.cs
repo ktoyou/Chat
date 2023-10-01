@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         builder =>
         {
-            builder.WithOrigins("")
+            builder.WithOrigins("http://46.175.122.36:3000")
                 .AllowAnyHeader()
                 .WithMethods("GET", "POST")
                 .AllowCredentials();

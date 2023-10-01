@@ -7,3 +7,7 @@
 	@apply text-white font-medium;
 	font-size: 20px;
 }
+
+.room_online {
+	@apply text-white opacity-50
+}

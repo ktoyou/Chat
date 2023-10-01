@@ -1,7 +1,11 @@
+import IMessage from "./IMessage";
+import IUser from "./IUser";
+
 interface IRoom {
   name: string;
   id: number;
-  onJoin: Function;
+  users: IUser[];
+  messages: IMessage[];
 }
 
 export default IRoom;

@@ -5,7 +5,6 @@ import {
   useEffect,
   KeyboardEvent,
 } from "react";
-import { FaRegSmile } from "react-icons/fa";
 import styles from "./ChatPage.module.css";
 import SendMessageButton from "./SendMessageButton/SendMessageButton";
 import MessagesList from "./MessagesList/MessagesList";
@@ -16,6 +15,8 @@ import IMessage from "../../types/IMessage";
 import LeaveRoomButton from "./LeaveRoomButton/LeaveRoomButton";
 import ApiResponseType from "../../types/ResponseType";
 import ClientContext from "../../context/ClientContext";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiButton from "./EmojiButton/EmojiButton";
 
 interface IChatPageProps {
   room: IRoom;
@@ -23,7 +24,8 @@ interface IChatPageProps {
 
 const ChatPage = ({ room }: IChatPageProps): ReactElement => {
   const [messages, setMessages] = useState<IMessage[]>([]);
-  const [messageContent, setMessageContent] = useState<string>();
+  const [messageContent, setMessageContent] = useState<string>("");
+  const [emojiPanelOpen, setEmojiPanelOpen] = useState<boolean>(false);
   const context = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
 
@@ -56,6 +58,10 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
     setMessageContent("");
   };
 
+  const onEmojiClick = (e: EmojiClickData) => {
+    setMessageContent(messageContent + e.emoji);
+  };
+
   const onKeyDownMessageInput = (e: KeyboardEvent) => {
     if (e.code === "Enter") sendMessageHandler();
   };
@@ -71,7 +77,14 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
   return (
     <div className={styles.chat_layout}>
       <div className={styles.chat_layout_send_message_block}>
-        <FaRegSmile color="white" size={32} />
+        {emojiPanelOpen && (
+          <div className="absolute bottom-20">
+            <EmojiPicker onEmojiClick={onEmojiClick} />
+          </div>
+        )}
+        <EmojiButton
+          onOpenEmojiPanel={() => setEmojiPanelOpen(!emojiPanelOpen)}
+        />
         <input
           value={messageContent}
           onKeyDown={onKeyDownMessageInput}

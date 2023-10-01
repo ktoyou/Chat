@@ -7,6 +7,8 @@ namespace backend.Controllers;
 public class ChatHub : Hub
 {
     private const string ReceivePrefix = "_Receive";
+
+    private const string NotInTheRoom = "NotInTheRoom";
     
     private static List<User> _users = new List<User>();
 
@@ -25,27 +27,6 @@ public class ChatHub : Hub
             Name = "Room #2",
             Users = new List<User>(),
             Messages = new List<Message>()
-        },
-        new Room()
-        {
-            Id = 2,
-            Name = "Room #3",
-            Users = new List<User>(),
-            Messages = new List<Message>()
-        },
-        new Room()
-        {
-            Id = 3,
-            Name = "Room #4",
-            Users = new List<User>(),
-            Messages = new List<Message>()
-        },
-        new Room()
-        {
-            Id = 4,
-            Name = "Room #5",
-            Users = new List<User>(),
-            Messages = new List<Message>()
         }
     };
 
@@ -56,14 +37,14 @@ public class ChatHub : Hub
         var room = _rooms.FirstOrDefault(r => r.Id == roomId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync($"SendMessageToRoom{ReceivePrefix}", Errors.RoomNotFound);
+            await SendRoomNotFoundStatus("SendMessageToRoom");
             return;
         }
         
         var user = _users.FirstOrDefault(u => u.Name == from);
         if (user == null)
         {
-            await Clients.Caller.SendAsync($"SendMessageToRoom{ReceivePrefix}", Errors.UserNotFound);
+            await SendUserNotFoundStatus("SendMessageToRoom");
             return;
         }
 
@@ -85,7 +66,7 @@ public class ChatHub : Hub
         var room = _rooms.FirstOrDefault(r => r.Id == roomId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync($"GetMessagesFromRoom{ReceivePrefix}", Errors.RoomNotFound);
+            await SendRoomNotFoundStatus("GetMessagesFromRoom");
             return;
         }
         
@@ -98,20 +79,23 @@ public class ChatHub : Hub
         var user = _users.FirstOrDefault(u => u.Name == login);
         if (user == null)
         {
-            await Clients.Caller.SendAsync($"JoinRoom{ReceivePrefix}", Errors.UserNotFound);
+            await SendUserNotFoundStatus("JoinRoom");
             return;
         }
         
         var room = _rooms.FirstOrDefault(r => r.Id == roomId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync($"JoinRoom{ReceivePrefix}", Errors.RoomNotFound);
+            await SendRoomNotFoundStatus("JoinRoom");
             return;
         }
 
         room.Users.Add(user);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId.ToString());
         await Clients.Caller.SendAsync($"JoinRoom{ReceivePrefix}", Errors.WithoutErrors, JsonConvert.SerializeObject(room));
+
+        await SendJoinMessageToRoomAsync(room, user);
+        await SendRoomsToAllClients();
     }
 
     public async Task LeaveRoom(int roomId, string login)
@@ -119,26 +103,23 @@ public class ChatHub : Hub
         var user = _users.FirstOrDefault(u => u.Name == login);
         if (user == null)
         {
-            await Clients.Caller.SendAsync($"LeaveRoom{ReceivePrefix}", Errors.UserNotFound);
+            await SendUserNotFoundStatus("LeaveRoom");
             return;
         }
         
         var room = _rooms.FirstOrDefault(r => r.Id == roomId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync($"LeaveRoom{ReceivePrefix}", Errors.RoomNotFound);
+            await SendRoomNotFoundStatus("LeaveRoom");
             return;
         }
 
         room.Users.Remove(user);
         await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId.ToString());
         await Clients.Caller.SendAsync($"LeaveRoom{ReceivePrefix}", Errors.WithoutErrors);
-    }
-    
-    public async Task GetRooms()
-    {
-        var json = JsonConvert.SerializeObject(_rooms);
-        await Clients.Caller.SendAsync($"GetRooms{ReceivePrefix}", json);
+        
+        await SendLeaveMessageFromRoomAsync(room, user);
+        await SendRoomsToAllClients();
     }
 
     public async Task LoginUser(string login)
@@ -150,22 +131,18 @@ public class ChatHub : Hub
             return;
         }
 
-        int id;
-        if (_users.Count == 0) id = 0;
-        else
-        {
-            id = _users.Select(u => u.Id).Max();
-            id++;
-        }
-        
         _users.Add(new User()
         {
-            Id = id,
+            Id = GetIncrementedUserId(),
             Name = login,
             ConnectionId = Context.ConnectionId
         });
         await Clients.Caller.SendAsync($"LoginUser{ReceivePrefix}", (int)Errors.WithoutErrors);
+        await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
     }
+    
+    public async Task GetRooms() => 
+        await Clients.Caller.SendAsync($"GetRooms{ReceivePrefix}", JsonConvert.SerializeObject(_rooms));
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
@@ -175,6 +152,21 @@ public class ChatHub : Hub
         await RemoveUserFromAllGroupsAsync(user);
     }
 
+    private async Task SendRoomsToAllClients() =>
+        await Clients.Group(NotInTheRoom).SendAsync($"GetRooms{ReceivePrefix}", JsonConvert.SerializeObject(_rooms));
+    
+    private async Task SendUserNotFoundStatus(string method) =>
+        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", Errors.UserNotFound);
+    
+    private async Task SendRoomNotFoundStatus(string method) =>
+        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", Errors.RoomNotFound);
+
+    private async Task SendJoinMessageToRoomAsync(Room room, User user) =>
+        await SendSystemMessageAsync(room, user, $"Пользователь {user.Name} зашел в комнату");
+
+    private async Task SendLeaveMessageFromRoomAsync(Room room, User user) =>
+        await SendSystemMessageAsync(room, user, $"Пользователь {user.Name} вышел из комнаты");
+    
     private async Task RemoveUserFromAllGroupsAsync(User user)
     {
         _users.Remove(user);
@@ -183,5 +175,34 @@ public class ChatHub : Hub
         {
             await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId.ToString());
         }
+    }
+
+    private int GetIncrementedUserId()
+    {
+        int id;
+        if (_users.Count == 0) id = 0;
+        else
+        {
+            id = _users.Select(u => u.Id).Max();
+            id++;
+        }
+
+        return id;
+    }
+
+    private async Task SendSystemMessageAsync(Room room, User user, string msg)
+    {
+        var message = new Message()
+        {
+            Content = msg,
+            From = new User()
+            {
+                Name = "Admin"
+            },
+            Id = Guid.NewGuid()
+        };
+        room.Messages.Add(message);
+        var json = JsonConvert.SerializeObject(message);
+        await Clients.Group(room.Id.ToString()).SendAsync($"SendMessageToRoom{ReceivePrefix}", json);
     }
 }
