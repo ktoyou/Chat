@@ -19,7 +19,7 @@ public class RoomsRepository : AbstractRepository<Room>
         _dbApplicationContext.Rooms.Remove(item);
         await _dbApplicationContext.SaveChangesAsync();
     }
-    //2fd9bf98-73d5-441f-8862-c00bbcb472df
+    
     public override async Task<Room> GetByGuid(Guid guid)
     {
         var room = await _dbApplicationContext.Rooms
@@ -34,6 +34,7 @@ public class RoomsRepository : AbstractRepository<Room>
         var rooms = await _dbApplicationContext.Rooms
             .Include(u => u.Users)
             .Include(m => m.Messages)
+            .Include(u => u.User)
             .ToListAsync();
         return  rooms;
     }

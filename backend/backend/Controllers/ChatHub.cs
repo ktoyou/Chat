@@ -87,6 +87,7 @@ public class ChatHub : Hub
             return;
         }
         
+        room.Users.Add(user);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", ResponseType.WithoutErrors, JsonConvert.SerializeObject(room));
 
@@ -197,6 +198,7 @@ public class ChatHub : Hub
     public override async Task OnConnectedAsync()
     {
         var userId = Context.GetHttpContext().Request.Cookies["id"];
+        if(userId == null) return;
         await _usersRepository.UpdateUserConnectionIdByGuid(Guid.Parse(userId), Context.ConnectionId);
     }
 

@@ -42,7 +42,6 @@ public class UsersRepository : AbstractRepository<User>
     public async Task UpdateUserConnectionIdByGuid(Guid guid, string connectionId)
     {
         var user = await GetByGuid(guid);
-        if(user == null) return;
         user.ConnectionId = connectionId;
         _dbApplicationContext.Update(user);
         await _dbApplicationContext.SaveChangesAsync();
