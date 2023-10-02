@@ -17,6 +17,8 @@ import ApiResponseType from "../../types/ResponseType";
 import ClientContext from "../../context/ClientContext";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import EmojiButton from "./EmojiButton/EmojiButton";
+import { FiUsers } from "react-icons/fi";
+import { MdDriveFileRenameOutline } from "react-icons/md";
 
 interface IChatPageProps {
   room: IRoom;
@@ -26,6 +28,7 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [messageContent, setMessageContent] = useState<string>("");
   const [emojiPanelOpen, setEmojiPanelOpen] = useState<boolean>(false);
+  const [usersOnline, setUsersOnline] = useState<number>(room.users.length);
   const context = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
 
@@ -36,6 +39,15 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
 
   context.on("GetMessagesFromRoom_Receive", (messages) => {
     setMessages(JSON.parse(messages));
+  });
+
+  context.on("GetRooms_Receive", (data) => {
+    const rooms: IRoom[] = JSON.parse(data);
+    rooms.forEach((r) => {
+      if (r.id == room.id) {
+        setUsersOnline(r.users.length);
+      }
+    });
   });
 
   context.on("LeaveRoom_Receive", (status: ApiResponseType) => {
@@ -76,6 +88,16 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
 
   return (
     <div className={styles.chat_layout}>
+      <div className={styles.chat_layout_header}>
+        <p className={styles.chat_layout_room_name}>
+          <MdDriveFileRenameOutline size={28} />
+          {room.name}
+        </p>
+        <p className={styles.chat_layout_users_on_room}>
+          <FiUsers size={25} />
+          {usersOnline}
+        </p>
+      </div>
       <div className={styles.chat_layout_send_message_block}>
         {emojiPanelOpen && (
           <div className="absolute bottom-20">

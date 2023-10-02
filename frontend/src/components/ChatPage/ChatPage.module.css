@@ -12,5 +12,19 @@
 }
 
 .chat_layout_messages {
-	@apply h-full -z-10
+	@apply h-[90%];
+}
+
+.chat_layout_users_on_room {
+	@apply text-white flex items-center;
+	font-size: 16px;
+}
+
+.chat_layout_room_name {
+	@apply text-white flex items-center mr-5;
+	font-size: 16px;
+}
+
+.chat_layout_header {
+	@apply flex p-3 bg-blue-950
 }

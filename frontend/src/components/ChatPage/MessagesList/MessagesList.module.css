@@ -1,5 +1,5 @@
 
 .messages_list {
-	@apply p-5 pb-20 h-screen;
+	@apply p-3 h-full;
 	overflow-y: auto;
 }
