@@ -52,7 +52,7 @@ public class RoomsRepository : AbstractRepository<Room>
 
     public async Task RemoveUserFromAllRooms(User user)
     {
-        //await _dbApplicationContext.Rooms.ForEachAsync(room => room.Users.Remove(user));
+        await _dbApplicationContext.Rooms.Include(r => r.Users).ForEachAsync(room => room.Users.Remove(user));
         await _dbApplicationContext.SaveChangesAsync();
     }
 }
