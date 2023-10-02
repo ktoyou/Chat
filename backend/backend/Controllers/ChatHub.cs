@@ -87,7 +87,6 @@ public class ChatHub : Hub
             return;
         }
         
-        room.Users.Add(user);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", ResponseType.WithoutErrors, JsonConvert.SerializeObject(room));
 
@@ -195,6 +194,12 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", json);
     }
 
+    public override async Task OnConnectedAsync()
+    {
+        var userId = Context.GetHttpContext().Request.Cookies["id"];
+        await _usersRepository.UpdateUserConnectionIdByGuid(Guid.Parse(userId), Context.ConnectionId);
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var user = await _usersRepository.GetByConnectionId(Context.ConnectionId);
@@ -244,10 +249,13 @@ public class ChatHub : Hub
             Content = msg,
             User = await _usersRepository.GetSystemUser(),
             Id = Guid.NewGuid(),
-            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            Room = room
         };
-        room.Messages.Add(message);
+        
         var json = JsonConvert.SerializeObject(message);
+        
+        await _messagesRepository.Add(message);
         await Clients.Group(room.Id.ToString()).SendAsync($"SendMessageToRoom{ReceivePrefix}", json);
     }
 }

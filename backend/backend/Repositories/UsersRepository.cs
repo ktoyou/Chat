@@ -34,4 +34,11 @@ public class UsersRepository : AbstractRepository<User>
 
     public async Task<User> GetSystemUser()
         => await _dbApplicationContext.Users.FirstOrDefaultAsync(u => u.Name == "System");
+
+    public async Task UpdateUserConnectionIdByGuid(Guid guid, string connectionId)
+    {
+        var user = await GetByGuid(guid);
+        user.ConnectionId = connectionId;
+        await _dbApplicationContext.SaveChangesAsync();
+    }
 }
