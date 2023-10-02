@@ -16,7 +16,7 @@ const App = (): ReactElement => {
   const wsContext = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
 
-  wsContext.on("UserExists_Receive", (status: ApiResponseType) => {
+  wsContext.on("ConnectUser_Receive", (status: ApiResponseType) => {
     if (status == ApiResponseType.UserExists) {
       setLogged(true);
     } else {

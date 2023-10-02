@@ -12,7 +12,7 @@ connection.start().then(() => {
 
   const userId = Cookies.get("id");
   if (userId) {
-    connection.invoke("UserExists", Cookies.get("id"));
+    connection.invoke("ConnectUser", Cookies.get("id"));
   }
 });
 

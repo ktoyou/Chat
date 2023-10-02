@@ -9,14 +9,15 @@ interface IMessageProps {
 }
 
 const Message = ({ message, isMyMessage }: IMessageProps): ReactElement => {
-  const formattedTime = format.asString(new Date(message.unixTime));
+  const dateTime = new Date(message.unixTime * 1000);
+  const formattedDateTime = `${dateTime.toLocaleDateString()} ${dateTime.toLocaleTimeString()}`;
 
   return isMyMessage ? (
     <div className={styles.my_message}>
       <span className={styles.my_message_from}>{message.from.name}</span>
       <div className={styles.my_message_content}>
         {message.content}
-        <p className={styles.message_time}>{formattedTime}</p>
+        <p className={styles.message_time}>{formattedDateTime}</p>
       </div>
     </div>
   ) : (
@@ -24,7 +25,7 @@ const Message = ({ message, isMyMessage }: IMessageProps): ReactElement => {
       <span className={styles.message_from}>{message.from.name}</span>
       <div className={styles.message_content}>
         {message.content}
-        <p className={styles.message_time}>{message.unixTime}</p>
+        <p className={styles.message_time}>{formattedDateTime}</p>
       </div>
     </div>
   );

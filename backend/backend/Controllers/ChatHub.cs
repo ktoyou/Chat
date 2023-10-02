@@ -141,18 +141,18 @@ public class ChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
     }
 
-    public async Task UserExists(string userId)
+    public async Task ConnectUser(string userId)
     {
         var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
         if (user != null)
         {
             user.ConnectionId = Context.ConnectionId;
             await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
-            await Clients.Caller.SendAsync($"{nameof(UserExists)}{ReceivePrefix}", Errors.UserExists);
+            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", Errors.UserExists);
             return;
         }
 
-        await Clients.Caller.SendAsync($"{nameof(UserExists)}{ReceivePrefix}", Errors.UserNotFound);
+        await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", Errors.UserNotFound);
     }
 
     public async Task CreateRoom(string userId, string name)
