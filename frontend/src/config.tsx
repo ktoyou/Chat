@@ -4,7 +4,7 @@ interface IConfig {
 }
 
 const config: IConfig = {
-  ip: "localhost",
+  ip: "46.175.122.36",
   port: 5013,
 };
 

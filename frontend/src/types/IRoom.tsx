@@ -4,7 +4,8 @@ import IUser from "./IUser";
 interface IRoom {
   name: string;
   maxUsers: number;
-  id: number;
+  id: string;
+  creator: IUser;
   users: IUser[];
   messages: IMessage[];
 }

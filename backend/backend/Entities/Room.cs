@@ -8,10 +8,13 @@ public class Room
     public int MaxUsers { get => 10; }
     
     [JsonProperty("id")]
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     [JsonProperty("name")]
     public string Name { get; set; }
+
+    [JsonProperty("creator")]
+    public User Creator { get; set; }
 
     [JsonProperty("users")]
     public List<User> Users { get; set; }

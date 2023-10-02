@@ -8,5 +8,6 @@ public enum Errors
     RoomNotFound = 3,
     RoomFull = 4,
     RoomCreated = 5,
-    RoomExists = 6
+    RoomExists = 6,
+    UserExists = 7
 }

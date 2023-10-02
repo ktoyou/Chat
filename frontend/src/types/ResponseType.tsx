@@ -6,6 +6,7 @@ enum ApiResponseType {
   RoomFull = 4,
   RoomCreated = 5,
   RoomExists = 6,
+  UserExists = 7,
 }
 
 export default ApiResponseType;

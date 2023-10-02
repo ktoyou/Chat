@@ -13,7 +13,7 @@ const Room = ({ room }: IRoomProps): ReactElement => {
   const context = useContext(WebSocketContext.wsContext);
 
   const joinRoomHandler = () => {
-    context.invoke("JoinRoom", Cookies.get("name"), room.id);
+    context.invoke("JoinRoom", Cookies.get("id"), room.id);
   };
 
   return (

@@ -15,25 +15,25 @@ public class ChatHub : Hub
         new User()
         {
             ConnectionId = string.Empty,
-            Id = 0,
+            Id = Guid.NewGuid(),
             Name = "System"
         }
     };
 
     private static List<Room> _rooms = new List<Room>();
 
-    public async Task SendMessageToRoom(int roomId, string from, string content)
+    public async Task SendMessageToRoom(string roomId, string userId, string content)
     {
         if(content == string.Empty) return;
         
-        var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(SendMessageToRoom));
             return;
         }
         
-        var user = _users.FirstOrDefault(u => u.Name == from);
+        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(SendMessageToRoom));
@@ -44,7 +44,8 @@ public class ChatHub : Hub
         {
             Content = content,
             From = user,
-            Id = Guid.NewGuid()
+            Id = Guid.NewGuid(),
+            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds()
         };
         
         room.Messages.Add(message);
@@ -53,9 +54,9 @@ public class ChatHub : Hub
         await Clients.Group(roomId.ToString()).SendAsync($"{nameof(SendMessageToRoom)}{ReceivePrefix}", json);
     }
 
-    public async Task GetMessagesFromRoom(int roomId)
+    public async Task GetMessagesFromRoom(string roomId)
     {
-        var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(GetMessagesFromRoom));
@@ -66,16 +67,16 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync($"{nameof(GetMessagesFromRoom)}{ReceivePrefix}", jsonMessages);
     }
     
-    public async Task JoinRoom(string login, int roomId)
+    public async Task JoinRoom(string userId, string roomId)
     {
-        var user = _users.FirstOrDefault(u => u.Name == login);
+        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(JoinRoom));
             return;
         }
         
-        var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(JoinRoom));
@@ -89,23 +90,23 @@ public class ChatHub : Hub
         }
         
         room.Users.Add(user);
-        await Groups.AddToGroupAsync(Context.ConnectionId, roomId.ToString());
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", Errors.WithoutErrors, JsonConvert.SerializeObject(room));
 
         await SendJoinMessageToRoomAsync(room, user);
         await SendRoomsToAllClientsAsync();
     }
 
-    public async Task LeaveRoom(int roomId, string login)
+    public async Task LeaveRoom(string roomId, string userId)
     {
-        var user = _users.FirstOrDefault(u => u.Name == login);
+        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(LeaveRoom));
             return;
         }
         
-        var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(LeaveRoom));
@@ -113,7 +114,7 @@ public class ChatHub : Hub
         }
 
         room.Users.Remove(user);
-        await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId.ToString());
+        await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId);
         await Clients.Caller.SendAsync($"{nameof(LeaveRoom)}{ReceivePrefix}", Errors.WithoutErrors);
         
         await SendLeaveMessageFromRoomAsync(room, user);
@@ -129,19 +130,41 @@ public class ChatHub : Hub
             return;
         }
 
-        _users.Add(new User()
+        var newUser = new User()
         {
-            Id = GetIncrementedUserId(),
+            Id = Guid.NewGuid(),
             Name = login,
             ConnectionId = Context.ConnectionId
-        });
-        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)Errors.WithoutErrors);
+        };
+        _users.Add(newUser);
+        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)Errors.WithoutErrors, JsonConvert.SerializeObject(newUser));
         await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
     }
 
-    public async Task CreateRoom(string name)
+    public async Task UserExists(string userId)
+    {
+        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        if (user != null)
+        {
+            user.ConnectionId = Context.ConnectionId;
+            await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
+            await Clients.Caller.SendAsync($"{nameof(UserExists)}{ReceivePrefix}", Errors.UserExists);
+            return;
+        }
+
+        await Clients.Caller.SendAsync($"{nameof(UserExists)}{ReceivePrefix}", Errors.UserNotFound);
+    }
+
+    public async Task CreateRoom(string userId, string name)
     {
         if(name == string.Empty) return;
+        
+        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        if (user == null)
+        {
+            await SendUserNotFoundStatusAsync(nameof(CreateRoom));
+            return;
+        }
         
         var findRoom = _rooms.FirstOrDefault(r => r.Name == name);
         if (findRoom != null)
@@ -153,9 +176,10 @@ public class ChatHub : Hub
         var room = new Room()
         {
             Name = name,
-            Id = GetIncrementedRoomId(),
+            Id = Guid.NewGuid(),
             Messages = new List<Message>(),
-            Users = new List<User>()
+            Users = new List<User>(),
+            Creator = user
         };
 
         _rooms.Add(room);
@@ -172,6 +196,7 @@ public class ChatHub : Hub
         if (user == null) return;
 
         await RemoveUserFromAllGroupsAsync(user);
+        await RemoveUserFromAllRoomsAsync(user);
     }
 
     private async Task SendRoomFullStatusAsync(string method)
@@ -194,7 +219,6 @@ public class ChatHub : Hub
     
     private async Task RemoveUserFromAllGroupsAsync(User user)
     {
-        _users.Remove(user);
         var roomIds = _rooms.Where(r => r.Users.FirstOrDefault(user) != null).Select(r => r.Id);
         foreach (var roomId in roomIds)
         {
@@ -202,30 +226,14 @@ public class ChatHub : Hub
         }
     }
 
-    private int GetIncrementedUserId()
+    private async Task RemoveUserFromAllRoomsAsync(User user)
     {
-        int id;
-        if (_users.Count == 0) id = 0;
-        else
+        _rooms.ForEach(async r =>
         {
-            id = _users.Select(u => u.Id).Max();
-            id++;
-        }
-
-        return id;
-    }
-
-    private int GetIncrementedRoomId()
-    {
-        int id;
-        if (_rooms.Count == 0) id = 0;
-        else
-        {
-            id = _rooms.Select(u => u.Id).Max();
-            id++;
-        }
-
-        return id;
+            var u = r.Users.FirstOrDefault(user);
+            r.Users.Remove(u);
+            await SendRoomsToAllClientsAsync();
+        });
     }
 
     private async Task SendSystemMessageAsync(Room room, User user, string msg)
@@ -234,7 +242,8 @@ public class ChatHub : Hub
         {
             Content = msg,
             From = _users.FirstOrDefault(u => u.Name == "System"),
-            Id = Guid.NewGuid()
+            Id = Guid.NewGuid(),
+            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds()
         };
         room.Messages.Add(message);
         var json = JsonConvert.SerializeObject(message);

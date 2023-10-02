@@ -9,7 +9,7 @@ const Modal = ({ children, header, onClose }: IModalProps): ReactElement => {
       <div className={styles.modal}>
         <div className={styles.modal_title}>
           {header}
-          <a onClick={() => onClose()} className={styles.modal_close}>
+          <a href="#" onClick={() => onClose()} className={styles.modal_close}>
             <AiOutlineClose color="white" size={32} />
           </a>
         </div>

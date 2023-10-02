@@ -12,4 +12,7 @@ public class Message
 
     [JsonProperty("content")]
     public string Content { get; set; }
+    
+    [JsonProperty("unixTime")] 
+    public long UnixTime { get; set; }
 }

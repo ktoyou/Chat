@@ -13,7 +13,7 @@ const MessagesList = ({ messages }: IMessagesListProps): ReactElement => {
     <div className={styles.messages_list}>
       {messages.map((msg) => (
         <Message
-          isMyMessage={msg.from.name === Cookies.get("name")}
+          isMyMessage={msg.from.id === Cookies.get("id")}
           key={msg.id}
           message={msg}
         />

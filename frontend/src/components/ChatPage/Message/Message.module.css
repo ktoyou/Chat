@@ -26,3 +26,8 @@
 	@apply bg-orange-700 text-white p-2 rounded-xl rounded-tr-none max-w-full break-words;
 	font-size: 18px;
 }
+
+.message_time {
+	@apply opacity-50;
+	font-size: 15px;
+}

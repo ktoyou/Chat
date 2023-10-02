@@ -52,7 +52,7 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
     context.invoke(
       "SendMessageToRoom",
       room.id,
-      Cookies.get("name"),
+      Cookies.get("id"),
       messageContent
     );
     setMessageContent("");
@@ -67,7 +67,7 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
   };
 
   const leaveRoomHandler = () => {
-    context.invoke("LeaveRoom", room.id, Cookies.get("name"));
+    context.invoke("LeaveRoom", room.id, Cookies.get("id"));
   };
 
   useEffect(() => {
