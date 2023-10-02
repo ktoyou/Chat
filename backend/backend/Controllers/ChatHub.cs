@@ -1,4 +1,5 @@
 using backend.Entities;
+using backend.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -9,31 +10,32 @@ public class ChatHub : Hub
     private const string ReceivePrefix = "_Receive";
 
     private const string NotInTheRoom = "NotInTheRoom";
+
+    private readonly UsersRepository _usersRepository;
+
+    private readonly RoomsRepository _roomsRepository;
+
+    private readonly MessagesRepository _messagesRepository;
     
-    private static List<User> _users = new List<User>()
+    public ChatHub(UsersRepository usersRepository, RoomsRepository roomsRepository, MessagesRepository messagesRepository)
     {
-        new User()
-        {
-            ConnectionId = string.Empty,
-            Id = Guid.NewGuid(),
-            Name = "System"
-        }
-    };
-
-    private static List<Room> _rooms = new List<Room>();
-
+        _usersRepository = usersRepository;
+        _roomsRepository = roomsRepository;
+        _messagesRepository = messagesRepository;
+    }
+    
     public async Task SendMessageToRoom(string roomId, string userId, string content)
     {
         if(content == string.Empty) return;
-        
-        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
+
+        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(SendMessageToRoom));
             return;
         }
-        
-        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(SendMessageToRoom));
@@ -43,40 +45,36 @@ public class ChatHub : Hub
         var message = new Message()
         {
             Content = content,
-            From = user,
+            User = user,
             Id = Guid.NewGuid(),
-            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            Room = room
         };
         
-        room.Messages.Add(message);
+        await _messagesRepository.Add(message);
         var json = JsonConvert.SerializeObject(message);
         
-        await Clients.Group(roomId.ToString()).SendAsync($"{nameof(SendMessageToRoom)}{ReceivePrefix}", json);
+        await Clients.Group(roomId).SendAsync($"{nameof(SendMessageToRoom)}{ReceivePrefix}", json);
     }
 
     public async Task GetMessagesFromRoom(string roomId)
     {
-        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
-        if (room == null)
-        {
-            await SendRoomNotFoundStatusAsync(nameof(GetMessagesFromRoom));
-            return;
-        }
-        
-        var jsonMessages = JsonConvert.SerializeObject(room.Messages);
+        var messages = await _messagesRepository.GetMessagesByRoomGuid(Guid.Parse(roomId));
+
+        var jsonMessages = JsonConvert.SerializeObject(messages);
         await Clients.Caller.SendAsync($"{nameof(GetMessagesFromRoom)}{ReceivePrefix}", jsonMessages);
     }
     
     public async Task JoinRoom(string userId, string roomId)
     {
-        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(JoinRoom));
             return;
         }
         
-        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
+        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(JoinRoom));
@@ -91,7 +89,7 @@ public class ChatHub : Hub
         
         room.Users.Add(user);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", Errors.WithoutErrors, JsonConvert.SerializeObject(room));
+        await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", ResponseType.WithoutErrors, JsonConvert.SerializeObject(room));
 
         await SendJoinMessageToRoomAsync(room, user);
         await SendRoomsToAllClientsAsync();
@@ -99,14 +97,14 @@ public class ChatHub : Hub
 
     public async Task LeaveRoom(string roomId, string userId)
     {
-        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(LeaveRoom));
             return;
         }
         
-        var room = _rooms.FirstOrDefault(r => r.Id == Guid.Parse(roomId));
+        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
         if (room == null)
         {
             await SendRoomNotFoundStatusAsync(nameof(LeaveRoom));
@@ -115,7 +113,7 @@ public class ChatHub : Hub
 
         room.Users.Remove(user);
         await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId);
-        await Clients.Caller.SendAsync($"{nameof(LeaveRoom)}{ReceivePrefix}", Errors.WithoutErrors);
+        await Clients.Caller.SendAsync($"{nameof(LeaveRoom)}{ReceivePrefix}", ResponseType.WithoutErrors);
         
         await SendLeaveMessageFromRoomAsync(room, user);
         await SendRoomsToAllClientsAsync();
@@ -124,10 +122,11 @@ public class ChatHub : Hub
     public async Task LoginUser(string login)
     {
         if(login == null || login == string.Empty) return;
-        var user = _users.FirstOrDefault(u => u.Name == login);
+        var user = await _usersRepository.GetByName(login);
+        
         if (user != null)
         {
-            await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)Errors.LoginExists);
+            await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)ResponseType.LoginExists);
             return;
         }
 
@@ -137,40 +136,41 @@ public class ChatHub : Hub
             Name = login,
             ConnectionId = Context.ConnectionId
         };
-        _users.Add(newUser);
-        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)Errors.WithoutErrors, JsonConvert.SerializeObject(newUser));
+
+        await _usersRepository.Add(newUser);
+        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)ResponseType.WithoutErrors, JsonConvert.SerializeObject(newUser));
         await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
     }
 
     public async Task ConnectUser(string userId)
     {
-        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user != null)
         {
             user.ConnectionId = Context.ConnectionId;
             await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
-            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", Errors.UserExists);
+            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserExists);
             return;
         }
 
-        await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", Errors.UserNotFound);
+        await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserNotFound);
     }
 
     public async Task CreateRoom(string userId, string name)
     {
         if(name == string.Empty) return;
         
-        var user = _users.FirstOrDefault(u => u.Id == Guid.Parse(userId));
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user == null)
         {
             await SendUserNotFoundStatusAsync(nameof(CreateRoom));
             return;
         }
         
-        var findRoom = _rooms.FirstOrDefault(r => r.Name == name);
+        var findRoom = await _roomsRepository.GetByName(name);
         if (findRoom != null)
         {
-            await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", Errors.RoomExists);
+            await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", ResponseType.RoomExists);
             return;
         }
         
@@ -180,20 +180,24 @@ public class ChatHub : Hub
             Id = Guid.NewGuid(),
             Messages = new List<Message>(),
             Users = new List<User>(),
-            Creator = user
+            User = user
         };
 
-        _rooms.Add(room);
-        await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", Errors.RoomCreated);
+        await _roomsRepository.Add(room);
+        await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", ResponseType.RoomCreated);
         await SendRoomsToAllClientsAsync();
     }
 
-    public async Task GetRooms() => 
-        await Clients.Caller.SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(_rooms));
+    public async Task GetRooms()
+    {
+        var rooms = await _roomsRepository.GetAll();
+        var json = JsonConvert.SerializeObject(rooms);
+        await Clients.Caller.SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", json);
+    }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var user = _users.FirstOrDefault(u => u.ConnectionId == Context.ConnectionId);
+        var user = await _usersRepository.GetByConnectionId(Context.ConnectionId);
         if (user == null) return;
 
         await RemoveUserFromAllGroupsAsync(user);
@@ -201,16 +205,16 @@ public class ChatHub : Hub
     }
 
     private async Task SendRoomFullStatusAsync(string method)
-        => await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", Errors.RoomFull);
+        => await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.RoomFull);
 
     private async Task SendRoomsToAllClientsAsync() =>
-        await Clients.Group(NotInTheRoom).SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(_rooms));
+        await Clients.Group(NotInTheRoom).SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(await _roomsRepository.GetAll()));
     
     private async Task SendUserNotFoundStatusAsync(string method) =>
-        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", Errors.UserNotFound);
+        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.UserNotFound);
     
     private async Task SendRoomNotFoundStatusAsync(string method) =>
-        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", Errors.RoomNotFound);
+        await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.RoomNotFound);
 
     private async Task SendJoinMessageToRoomAsync(Room room, User user) =>
         await SendSystemMessageAsync(room, user, $"Пользователь {user.Name} зашел в комнату");
@@ -220,7 +224,7 @@ public class ChatHub : Hub
     
     private async Task RemoveUserFromAllGroupsAsync(User user)
     {
-        var roomIds = _rooms.Where(r => r.Users.FirstOrDefault(user) != null).Select(r => r.Id);
+        var roomIds = await _roomsRepository.GetRoomsIdsByUser(user);
         foreach (var roomId in roomIds)
         {
             await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId.ToString());
@@ -229,12 +233,8 @@ public class ChatHub : Hub
 
     private async Task RemoveUserFromAllRoomsAsync(User user)
     {
-        _rooms.ForEach(async r =>
-        {
-            var u = r.Users.FirstOrDefault(user);
-            r.Users.Remove(u);
-            await SendRoomsToAllClientsAsync();
-        });
+        await _roomsRepository.RemoveUserFromAllRooms(user);
+        await SendRoomsToAllClientsAsync();
     }
 
     private async Task SendSystemMessageAsync(Room room, User user, string msg)
@@ -242,7 +242,7 @@ public class ChatHub : Hub
         var message = new Message()
         {
             Content = msg,
-            From = _users.FirstOrDefault(u => u.Name == "System"),
+            User = await _usersRepository.GetSystemUser(),
             Id = Guid.NewGuid(),
             UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds()
         };

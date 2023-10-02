@@ -14,7 +14,7 @@ public class Room
     public string Name { get; set; }
 
     [JsonProperty("creator")]
-    public User Creator { get; set; }
+    public User User { get; set; }
 
     [JsonProperty("users")]
     public List<User> Users { get; set; }

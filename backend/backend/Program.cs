@@ -1,4 +1,6 @@
 using backend.Controllers;
+using backend.Db;
+using backend.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +8,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<DbApplicationContext>();
+builder.Services.AddTransient<UsersRepository>();
+builder.Services.AddTransient<RoomsRepository>();
+builder.Services.AddTransient<MessagesRepository>();
+
 builder.Services.AddSignalR(builder =>
 {
     builder.MaximumReceiveMessageSize = null;

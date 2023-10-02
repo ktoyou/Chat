@@ -24,5 +24,8 @@ frontend/yarn-error.log*
 
 backend/backend/bin
 backend/backend/obj
+backend/backend/*.db
+backend/backend/*db-shm
+backend/backend/*db-wal
 backend/.idea
 backend/.code

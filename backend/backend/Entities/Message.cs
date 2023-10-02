@@ -8,11 +8,14 @@ public class Message
     public Guid Id { get; set; }
 
     [JsonProperty("from")]
-    public User From { get; set; }
+    public User User { get; set; }
 
     [JsonProperty("content")]
     public string Content { get; set; }
     
     [JsonProperty("unixTime")] 
     public long UnixTime { get; set; }
+
+    [JsonIgnore]
+    public Room Room { get; set; }
 }
