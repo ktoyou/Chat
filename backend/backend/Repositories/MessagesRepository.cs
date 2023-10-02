@@ -27,5 +27,9 @@ public class MessagesRepository : AbstractRepository<Message>
         => await _dbApplicationContext.Messages.ToListAsync();
 
     public async Task<List<Message>> GetMessagesByRoomGuid(Guid guid)
-        => await _dbApplicationContext.Messages.Include(m => m.Room).Include(u => u.User).Where(m => m.Room.Id == guid).ToListAsync();
+        => await _dbApplicationContext.Messages
+            .Include(m => m.Room)
+            .Include(u => u.User)
+            .Where(m => m.Room.Id == guid)
+            .ToListAsync();
 }

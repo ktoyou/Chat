@@ -21,24 +21,30 @@ public class UsersRepository : AbstractRepository<User>
     }
 
     public override async Task<User> GetByGuid(Guid guid)
-        => await _dbApplicationContext.Users.FirstOrDefaultAsync(u => u.Id == guid);
+        => await _dbApplicationContext.Users
+            .FirstOrDefaultAsync(u => u.Id == guid);
 
     public override async Task<List<User>> GetAll()
         => await _dbApplicationContext.Users.ToListAsync();
 
     public async Task<User> GetByName(string name)
-        => await _dbApplicationContext.Users.FirstOrDefaultAsync(u => u.Name == name);
+        => await _dbApplicationContext.Users
+            .FirstOrDefaultAsync(u => u.Name == name);
 
     public async Task<User> GetByConnectionId(string connectionId)
-        => await _dbApplicationContext.Users.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
+        => await _dbApplicationContext.Users
+            .FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
 
     public async Task<User> GetSystemUser()
-        => await _dbApplicationContext.Users.FirstOrDefaultAsync(u => u.Name == "System");
+        => await _dbApplicationContext.Users
+            .FirstOrDefaultAsync(u => u.Name == "System");
 
     public async Task UpdateUserConnectionIdByGuid(Guid guid, string connectionId)
     {
         var user = await GetByGuid(guid);
+        if(user == null) return;
         user.ConnectionId = connectionId;
+        _dbApplicationContext.Update(user);
         await _dbApplicationContext.SaveChangesAsync();
     }
 }
