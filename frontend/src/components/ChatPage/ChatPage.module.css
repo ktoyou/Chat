@@ -4,7 +4,7 @@
 }
 
 .chat_layout_send_message_block {
-	@apply flex bg-blue-950 p-3 w-full absolute bottom-0;
+	@apply flex bg-blue-950 p-3 w-full h-[6%] items-center;
 }
 
 .chat_layout_send_message_block_input {
@@ -12,7 +12,7 @@
 }
 
 .chat_layout_messages {
-	@apply h-[90%];
+	@apply h-[88%];
 }
 
 .chat_layout_users_on_room {
@@ -21,10 +21,10 @@
 }
 
 .chat_layout_room_name {
-	@apply text-white flex items-center mr-5;
+	@apply text-white flex items-center ml-5 mr-5;
 	font-size: 16px;
 }
 
 .chat_layout_header {
-	@apply flex p-3 bg-blue-950
+	@apply flex bg-blue-950 h-[6%]
 }

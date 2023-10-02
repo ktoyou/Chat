@@ -98,6 +98,11 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
           {usersOnline}
         </p>
       </div>
+
+      <div className={styles.chat_layout_messages}>
+        <MessagesList messages={messages} />
+      </div>
+
       <div className={styles.chat_layout_send_message_block}>
         {emojiPanelOpen && (
           <div className="absolute bottom-20">
@@ -116,9 +121,6 @@ const ChatPage = ({ room }: IChatPageProps): ReactElement => {
         />
         <SendMessageButton onClick={sendMessageHandler} />
         <LeaveRoomButton onClick={leaveRoomHandler} />
-      </div>
-      <div className={styles.chat_layout_messages}>
-        <MessagesList messages={messages} />
       </div>
     </div>
   );

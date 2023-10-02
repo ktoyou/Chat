@@ -123,6 +123,7 @@ public class ChatHub : Hub
 
     public async Task LoginUser(string login)
     {
+        if(login == null || login == string.Empty) return;
         var user = _users.FirstOrDefault(u => u.Name == login);
         if (user != null)
         {
