@@ -1,0 +1,4 @@
+
+.loading_layout {
+	@apply h-screen flex justify-center items-center
+}

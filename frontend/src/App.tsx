@@ -9,10 +9,13 @@ import ClientContext from "./context/ClientContext";
 import IRoom from "./types/IRoom";
 import IUser from "./types/IUser";
 import ApiResponseType from "./types/ResponseType";
+import Loading from "./components/Loading/Loading";
 
 const App = (): ReactElement => {
   const [logged, setLogged] = useState<boolean>(false);
   const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
+  const [connectingUser, setConnectingUser] = useState<boolean>(true);
+
   const wsContext = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
 
@@ -22,6 +25,7 @@ const App = (): ReactElement => {
     } else {
       setLogged(false);
     }
+    setConnectingUser(false);
   });
 
   clientContext.onRoomJoined = (room: IRoom) => {
@@ -43,9 +47,13 @@ const App = (): ReactElement => {
   };
 
   let content;
-  if (logged && currentRoom === null) content = <RoomsPage />;
-  else if (!logged) content = <LoginForm />;
-  else content = currentRoom && <ChatPage room={currentRoom} />;
+
+  if (!connectingUser && logged && currentRoom === null)
+    content = <RoomsPage />;
+  else if (!connectingUser && !logged) content = <LoginForm />;
+  else if (!connectingUser)
+    content = currentRoom && <ChatPage room={currentRoom} />;
+  else content = <Loading />;
 
   return (
     <WebSocketContext.wsContext.Provider value={WebSocketContext.connection}>
