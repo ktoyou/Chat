@@ -1,6 +1,6 @@
 
 .rooms_layout {
-	@apply h-screen flex justify-center items-center;
+	@apply h-screen;
 }
 
 .rooms_layout_title {
@@ -10,4 +10,16 @@
 
 .rooms_layout_skeleton {
 	@apply p-3
+}
+
+.rooms_header {
+	@apply bg-blue-950 h-[5%] items-center flex justify-end p-5
+}
+
+.rooms_main {
+	@apply h-[95%] flex items-center justify-center
+}
+
+.rooms_header_user_name {
+	@apply text-white mr-2 font-medium
 }

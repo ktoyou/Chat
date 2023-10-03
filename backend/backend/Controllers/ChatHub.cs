@@ -149,7 +149,7 @@ public class ChatHub : Hub
         {
             user.ConnectionId = Context.ConnectionId;
             await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
-            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserExists);
+            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserExists, JsonConvert.SerializeObject(user));
             return;
         }
 
@@ -197,8 +197,12 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.GetHttpContext().Request.Cookies["id"];
+        var userId = GetUserGuidFromCookies();
         if(userId == null) return;
+
+        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
+        if(user == null) return;
+        
         await _usersRepository.UpdateUserConnectionIdByGuid(Guid.Parse(userId), Context.ConnectionId);
     }
 
@@ -228,6 +232,9 @@ public class ChatHub : Hub
 
     private async Task SendLeaveMessageFromRoomAsync(Room room, User user) =>
         await SendSystemMessageAsync(room, user, $"Пользователь {user.Name} вышел из комнаты");
+    
+    private string? GetUserGuidFromCookies() 
+        => Context.GetHttpContext()?.Request.Cookies["id"];
     
     private async Task RemoveUserFromAllGroupsAsync(User user)
     {

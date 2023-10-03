@@ -7,14 +7,17 @@ import WebSocketContext from "../../context/WebSocketContext";
 import ApiResponseType from "../../types/ResponseType";
 import ClientContext from "../../context/ClientContext";
 import IUser from "../../types/IUser";
+import UserContext from "../../context/UserContext";
 
 const LoginForm = (): ReactElement => {
   const [login, setLogin] = useState<string>();
   const context = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
+  const userContext = useContext(UserContext.UserContext);
 
   context.on("LoginUser_Receive", (status: ApiResponseType, userData) => {
     const user: IUser = JSON.parse(userData);
+    userContext.user = user;
     if (status === ApiResponseType.LoginExists) {
       clientContext.onLoginError();
     } else {

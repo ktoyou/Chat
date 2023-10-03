@@ -10,6 +10,7 @@ import IRoom from "./types/IRoom";
 import IUser from "./types/IUser";
 import ApiResponseType from "./types/ResponseType";
 import Loading from "./components/Loading/Loading";
+import UserContext from "./context/UserContext";
 
 const App = (): ReactElement => {
   const [logged, setLogged] = useState<boolean>(false);
@@ -18,9 +19,12 @@ const App = (): ReactElement => {
 
   const wsContext = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
+  const userContext = useContext(UserContext.UserContext);
 
-  wsContext.on("ConnectUser_Receive", (status: ApiResponseType) => {
+  wsContext.on("ConnectUser_Receive", (status: ApiResponseType, userData) => {
     if (status == ApiResponseType.UserExists) {
+      const user: IUser = JSON.parse(userData);
+      userContext.user = user;
       setLogged(true);
     } else {
       setLogged(false);

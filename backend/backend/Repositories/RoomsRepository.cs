@@ -34,7 +34,6 @@ public class RoomsRepository : AbstractRepository<Room>
         var rooms = await _dbApplicationContext.Rooms
             .Include(u => u.Users)
             .Include(m => m.Messages)
-            .Include(u => u.User)
             .ToListAsync();
         return  rooms;
     }
