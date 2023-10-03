@@ -11,9 +11,7 @@ connection.start().then(() => {
   console.log("Connected to WS");
 
   const userId = Cookies.get("id");
-  if (userId) {
-    connection.invoke("ConnectUser", Cookies.get("id"));
-  }
+  connection.invoke("ConnectUser", Cookies.get("id"));
 });
 
 const wsContext = createContext<HubConnection>(connection);

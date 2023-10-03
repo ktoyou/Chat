@@ -144,6 +144,12 @@ public class ChatHub : Hub
 
     public async Task ConnectUser(string userId)
     {
+        if (userId == null)
+        {
+            await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserNotFound);
+            return;
+        }
+        
         var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user != null)
         {
@@ -198,12 +204,14 @@ public class ChatHub : Hub
     public override async Task OnConnectedAsync()
     {
         var userId = GetUserGuidFromCookies();
-        if(userId == null) return;
-
-        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
-        if(user == null) return;
-        
-        await _usersRepository.UpdateUserConnectionIdByGuid(Guid.Parse(userId), Context.ConnectionId);
+        if (userId != null)
+        {
+            var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
+            if (user != null)
+            {
+                await _usersRepository.UpdateUserConnectionIdByGuid(Guid.Parse(userId), Context.ConnectionId);
+            }
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
