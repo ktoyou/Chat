@@ -7,3 +7,7 @@
 	@apply text-white text-center;
 	font-size: 30px;
 }
+
+.rooms_layout_skeleton {
+	@apply p-3
+}
