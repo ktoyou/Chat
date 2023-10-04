@@ -17,7 +17,12 @@
 }
 
 .rooms_main {
-	@apply h-[95%] flex items-center justify-center
+	@apply h-[95%] flex items-center justify-center;
+	overflow-y: auto;
+}
+
+.rooms_main_rooms_list {
+	@apply mt-auto h-full flex flex-col items-center justify-center
 }
 
 .rooms_header_user_name {

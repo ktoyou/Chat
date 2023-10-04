@@ -9,5 +9,6 @@ public enum ResponseType
     RoomFull = 4,
     RoomCreated = 5,
     RoomExists = 6,
-    UserExists = 7
+    UserExists = 7,
+    InvalidPassword = 8
 }

@@ -6,12 +6,11 @@ import IRoom from "../../types/IRoom";
 import AddRoomBox from "./AddRoomBox/AddRoomBox";
 import CreateRoomModal from "../CreateRoomModal/CreateRoomModal";
 import ApiResponseType from "../../types/ResponseType";
-import { BsFillPersonFill } from "react-icons/bs";
 import Cookies from "js-cookie";
 import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
+import { BsFillPersonFill } from "react-icons/bs";
 import UserContext from "../../context/UserContext";
-import PrimaryButton from "../PrimaryButton/PrimaryButton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const RoomsPage = (): ReactElement => {
   const [rooms, setRooms] = useState<IRoom[]>([]);
@@ -39,8 +38,18 @@ const RoomsPage = (): ReactElement => {
     context.invoke("GetRooms");
   }, []);
 
-  const createRoomHandler = (name: string) => {
-    context.invoke("CreateRoom", Cookies.get("id"), name);
+  const createRoomHandler = (
+    name: string,
+    withPassword: boolean,
+    password: string
+  ) => {
+    context.invoke(
+      "CreateRoom",
+      Cookies.get("id"),
+      name,
+      withPassword,
+      password
+    );
   };
 
   return (
@@ -52,7 +61,7 @@ const RoomsPage = (): ReactElement => {
         <BsFillPersonFill size={32} color="#ffffff" />
       </div>
       <div className={styles.rooms_main}>
-        <div>
+        <div className={styles.rooms_main_rooms_list}>
           <h1 className={styles.rooms_layout_title}>Все комнаты</h1>
           {!loadingRooms ? (
             <div>

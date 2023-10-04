@@ -32,7 +32,7 @@ const LoginForm = (): ReactElement => {
           <h1 className={styles.login_layout_title}>Авторизация</h1>
           <div className={styles.login_layout_primary_input}>
             <PrimaryInput
-              onChange={(value: string) => setLogin(value)}
+              onChange={(e) => setLogin(e.target.value)}
               placeholder="Имя пользователя"
             />
           </div>

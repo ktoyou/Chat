@@ -28,7 +28,7 @@ const RoomList = ({ rooms }: IRoomListProps): ReactElement => {
   });
 
   return (
-    <div className={styles.room_list}>
+    <div>
       {rooms.map((room) => (
         <Room key={room.id} room={room} />
       ))}

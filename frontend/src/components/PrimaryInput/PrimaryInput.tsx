@@ -1,20 +1,18 @@
 import { ChangeEventHandler, ReactElement } from "react";
 import styles from "./PrimaryInput.module.css";
-
-interface IPrimaryInputProps {
-  placeholder: string;
-  onChange: Function;
-}
+import IPrimaryInputProps from "./PrimaryInput.props";
 
 const PrimaryInput = ({
   placeholder,
-  onChange,
+  disabled,
+  ...props
 }: IPrimaryInputProps): ReactElement => {
   return (
     <input
-      onChange={(e) => onChange(e.target.value)}
-      className={styles.input}
+      className={disabled ? styles.input_disabled : styles.input}
       placeholder={placeholder}
+      disabled={disabled}
+      {...props}
     />
   );
 };

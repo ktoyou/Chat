@@ -2,9 +2,10 @@ import IMessage from "./IMessage";
 import IUser from "./IUser";
 
 interface IRoom {
+  id: string;
   name: string;
   maxUsers: number;
-  id: string;
+  withPassword: boolean;
   creator: IUser;
   users: IUser[];
   messages: IMessage[];

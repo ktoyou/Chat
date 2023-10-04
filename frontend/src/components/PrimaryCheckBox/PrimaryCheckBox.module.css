@@ -1,0 +1,8 @@
+
+.primary_checkbox {
+	@apply flex
+}
+
+.primary_checkbox_placeholder {
+	@apply text-white mr-2
+}

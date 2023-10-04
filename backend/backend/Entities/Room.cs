@@ -13,6 +13,12 @@ public class Room
     [JsonProperty("name")]
     public string Name { get; set; }
 
+    [JsonProperty("withPassword")]
+    public bool WithPassword { get; set; }
+
+    [JsonIgnore] 
+    public string Password { get; set; }
+    
     [JsonProperty("creator")]
     public User User { get; set; }
 

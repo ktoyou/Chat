@@ -5,12 +5,11 @@ import Cookies from "js-cookie";
 
 const connection = new HubConnectionBuilder()
   .withUrl(`http://${config.ip}:${config.port}/chat`)
+  .withAutomaticReconnect()
   .build();
 
 connection.start().then(() => {
   console.log("Connected to WS");
-
-  const userId = Cookies.get("id");
   connection.invoke("ConnectUser", Cookies.get("id"));
 });
 

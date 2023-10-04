@@ -9,7 +9,7 @@ public class ChatHub : Hub
 {
     private const string ReceivePrefix = "_Receive";
 
-    private const string NotInTheRoom = "NotInTheRoom";
+    private const string DefaultGroup = "DefaultGroup";
 
     private readonly UsersRepository _usersRepository;
 
@@ -65,7 +65,7 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync($"{nameof(GetMessagesFromRoom)}{ReceivePrefix}", jsonMessages);
     }
     
-    public async Task JoinRoom(string userId, string roomId)
+    public async Task JoinRoom(string userId, string roomId, string password)
     {
         var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
         if (user == null)
@@ -79,6 +79,15 @@ public class ChatHub : Hub
         {
             await SendRoomNotFoundStatusAsync(nameof(JoinRoom));
             return;
+        }
+
+        if (room.WithPassword)
+        {
+            if (password != room.Password)
+            {
+                await SendIncorrectPassword(nameof(JoinRoom));
+                return;
+            }
         }
 
         if (room.Users.Count >= room.MaxUsers)
@@ -139,7 +148,7 @@ public class ChatHub : Hub
 
         await _usersRepository.Add(newUser);
         await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)ResponseType.WithoutErrors, JsonConvert.SerializeObject(newUser));
-        await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
+        await Groups.AddToGroupAsync(Context.ConnectionId, DefaultGroup);
     }
 
     public async Task ConnectUser(string userId)
@@ -154,7 +163,7 @@ public class ChatHub : Hub
         if (user != null)
         {
             user.ConnectionId = Context.ConnectionId;
-            await Groups.AddToGroupAsync(Context.ConnectionId, NotInTheRoom);
+            await Groups.AddToGroupAsync(Context.ConnectionId, DefaultGroup);
             await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserExists, JsonConvert.SerializeObject(user));
             return;
         }
@@ -162,7 +171,7 @@ public class ChatHub : Hub
         await Clients.Caller.SendAsync($"{nameof(ConnectUser)}{ReceivePrefix}", ResponseType.UserNotFound);
     }
 
-    public async Task CreateRoom(string userId, string name)
+    public async Task CreateRoom(string userId, string name, bool withPassword, string password)
     {
         if(name == string.Empty) return;
         
@@ -186,8 +195,16 @@ public class ChatHub : Hub
             Id = Guid.NewGuid(),
             Messages = new List<Message>(),
             Users = new List<User>(),
-            User = user
+            User = user,
+            WithPassword = false,
+            Password = string.Empty,
         };
+
+        if (withPassword)
+        {
+            room.Password = password;
+            room.WithPassword = withPassword;
+        }
 
         await _roomsRepository.Add(room);
         await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", ResponseType.RoomCreated);
@@ -223,11 +240,14 @@ public class ChatHub : Hub
         await RemoveUserFromAllRoomsAsync(user);
     }
 
+    private async Task SendIncorrectPassword(string method)
+        => await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.InvalidPassword);
+
     private async Task SendRoomFullStatusAsync(string method)
         => await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.RoomFull);
 
     private async Task SendRoomsToAllClientsAsync() =>
-        await Clients.Group(NotInTheRoom).SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(await _roomsRepository.GetAll()));
+        await Clients.Group(DefaultGroup).SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", JsonConvert.SerializeObject(await _roomsRepository.GetAll()));
     
     private async Task SendUserNotFoundStatusAsync(string method) =>
         await Clients.Caller.SendAsync($"{method}{ReceivePrefix}", ResponseType.UserNotFound);
