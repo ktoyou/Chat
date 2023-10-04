@@ -8,22 +8,22 @@ public class MessagesRepository : AbstractRepository<Message>
 {
     public MessagesRepository(DbApplicationContext context) : base(context) {}
 
-    public override async Task Add(Message item)
+    public override async Task AddAsync(Message item)
     {
         await _dbApplicationContext.Messages.AddAsync(item);
         await _dbApplicationContext.SaveChangesAsync();
     }
 
-    public override async Task Remove(Message item)
+    public override async Task RemoveAsync(Message item)
     {
         _dbApplicationContext.Messages.Remove(item);
         await _dbApplicationContext.SaveChangesAsync();
     }
 
-    public override async Task<Message> GetByGuid(Guid guid)
+    public override async Task<Message?> GetByGuidAsync(Guid guid)
         => await _dbApplicationContext.Messages.FirstOrDefaultAsync(m => m.Id == guid);
 
-    public override async Task<List<Message>> GetAll()
+    public override async Task<List<Message>> GetAllAsync()
         => await _dbApplicationContext.Messages.ToListAsync();
 
     public async Task<List<Message>> GetMessagesByRoomGuid(Guid guid)

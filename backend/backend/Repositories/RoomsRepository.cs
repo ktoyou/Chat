@@ -8,19 +8,19 @@ public class RoomsRepository : AbstractRepository<Room>
 {
     public RoomsRepository(DbApplicationContext context) : base(context) { }
 
-    public override async Task Add(Room item)
+    public override async Task AddAsync(Room item)
     {
         await _dbApplicationContext.Rooms.AddAsync(item);
         await _dbApplicationContext.SaveChangesAsync();
     }
 
-    public override async Task Remove(Room item)
+    public override async Task RemoveAsync(Room item)
     {
         _dbApplicationContext.Rooms.Remove(item);
         await _dbApplicationContext.SaveChangesAsync();
     }
     
-    public override async Task<Room> GetByGuid(Guid guid)
+    public override async Task<Room?> GetByGuidAsync(Guid guid)
     {
         var room = await _dbApplicationContext.Rooms
             .Include(u => u.Users)
@@ -29,7 +29,7 @@ public class RoomsRepository : AbstractRepository<Room>
         return room;
     }
 
-    public override async Task<List<Room>> GetAll()
+    public override async Task<List<Room>> GetAllAsync()
     {
         var rooms = await _dbApplicationContext.Rooms
             .Include(u => u.Users)
@@ -38,14 +38,14 @@ public class RoomsRepository : AbstractRepository<Room>
         return  rooms;
     }
 
-    public async Task<Room> GetByName(string name)
+    public async Task<Room?> GetByName(string name)
         => await _dbApplicationContext.Rooms
             .FirstOrDefaultAsync(r => r.Name == name);
     
     public async Task<List<Guid>> GetRoomsIdsByUser(User user) 
         => await _dbApplicationContext.Rooms
             .Include(r => r.Users)
-            .Where(r => r.Users.FirstOrDefault(user => user.Id == user.Id) != null)
+            .Where(r => r.Users.FirstOrDefault(u => u.Id == user.Id) != null)
             .Select(r => r.Id)
             .ToListAsync();
 

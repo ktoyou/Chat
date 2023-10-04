@@ -2,11 +2,11 @@ namespace backend.Repositories.Interfaces;
 
 public interface IRepository<T>
 {
-    Task Add(T item);
+    Task AddAsync(T item);
 
-    Task Remove(T item);
+    Task RemoveAsync(T item);
 
-    Task<T> GetByGuid(Guid guid);
+    Task<T?> GetByGuidAsync(Guid guid);
 
-    Task<List<T>> GetAll();
+    Task<List<T>> GetAllAsync();
 }
