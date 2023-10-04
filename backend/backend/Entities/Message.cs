@@ -1,8 +1,9 @@
+using backend.Interfaces;
 using Newtonsoft.Json;
 
 namespace backend.Entities;
 
-public class Message
+public class Message : IConvertibleToJson
 {
     [JsonProperty("id")]
     public Guid Id { get; set; }
@@ -18,4 +19,18 @@ public class Message
 
     [JsonIgnore]
     public Room Room { get; set; }
+
+    public string ToJson() => JsonConvert.SerializeObject(this);
+
+    public static Message BuildMessageNowTime(User from, Room room, string content)
+    {
+        return new Message()
+        {
+            Content = content,
+            User = from,
+            Id = Guid.NewGuid(),
+            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            Room = room
+        };
+    }
 }

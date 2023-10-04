@@ -1,8 +1,9 @@
+using backend.Interfaces;
 using Newtonsoft.Json;
 
 namespace backend.Entities;
 
-public class Room
+public class Room : IConvertibleToJson
 {
     [JsonProperty("maxUsers")]
     public int MaxUsers { get => 10; }
@@ -27,4 +28,20 @@ public class Room
     
     [JsonProperty("messages")] 
     public List<Message> Messages { get; set; }
+
+    public static Room BuildRoom(User user, string name, bool withPassword, string password)
+    {
+        return new Room()
+        {
+            Name = name,
+            Id = Guid.NewGuid(),
+            Messages = new List<Message>(),
+            Users = new List<User>(),
+            User = user,
+            WithPassword = withPassword,
+            Password = password == null || password == string.Empty ? "" : password,
+        };
+    }
+
+    public string ToJson() => JsonConvert.SerializeObject(this);
 }

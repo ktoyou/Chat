@@ -23,63 +23,36 @@ public class ChatHub : Hub
         _roomsRepository = roomsRepository;
         _messagesRepository = messagesRepository;
     }
-    
+
+    #region HubHandlers
+
     public async Task SendMessageToRoom(string roomId, string userId, string content)
     {
         if(content == string.Empty) return;
+        
+        var user = await GetUserIfExists(Guid.Parse(userId), nameof(SendMessageToRoom));
+        var room = await GetRoomIfExists(Guid.Parse(roomId), nameof(SendMessageToRoom));
+        if(user == null || room == null) return;
 
-        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
-        if (room == null)
-        {
-            await SendRoomNotFoundStatusAsync(nameof(SendMessageToRoom));
-            return;
-        }
-
-        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
-        if (user == null)
-        {
-            await SendUserNotFoundStatusAsync(nameof(SendMessageToRoom));
-            return;
-        }
-
-        var message = new Message()
-        {
-            Content = content,
-            User = user,
-            Id = Guid.NewGuid(),
-            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
-            Room = room
-        };
+        var message = Message.BuildMessageNowTime(user, room, content);
         
         await _messagesRepository.Add(message);
-        var json = JsonConvert.SerializeObject(message);
-        
-        await Clients.Group(roomId).SendAsync($"{nameof(SendMessageToRoom)}{ReceivePrefix}", json);
+        await Clients.Group(roomId).SendAsync($"{nameof(SendMessageToRoom)}{ReceivePrefix}", message.ToJson());
     }
 
     public async Task GetMessagesFromRoom(string roomId)
     {
         var messages = await _messagesRepository.GetMessagesByRoomGuid(Guid.Parse(roomId));
-
         var jsonMessages = JsonConvert.SerializeObject(messages);
+        
         await Clients.Caller.SendAsync($"{nameof(GetMessagesFromRoom)}{ReceivePrefix}", jsonMessages);
     }
     
     public async Task JoinRoom(string userId, string roomId, string password)
     {
-        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
-        if (user == null)
-        {
-            await SendUserNotFoundStatusAsync(nameof(JoinRoom));
-            return;
-        }
-        
-        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
-        if (room == null)
-        {
-            await SendRoomNotFoundStatusAsync(nameof(JoinRoom));
-            return;
-        }
+        var user = await GetUserIfExists(Guid.Parse(userId), nameof(JoinRoom));
+        var room = await GetRoomIfExists(Guid.Parse(roomId), nameof(JoinRoom));
+        if(user == null || room == null) return;
 
         if (room.WithPassword)
         {
@@ -98,7 +71,7 @@ public class ChatHub : Hub
         
         room.Users.Add(user);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", ResponseType.WithoutErrors, JsonConvert.SerializeObject(room));
+        await Clients.Caller.SendAsync($"{nameof(JoinRoom)}{ReceivePrefix}", ResponseType.WithoutErrors, room.ToJson());
 
         await SendJoinMessageToRoomAsync(room, user);
         await SendRoomsToAllClientsAsync();
@@ -106,19 +79,9 @@ public class ChatHub : Hub
 
     public async Task LeaveRoom(string roomId, string userId)
     {
-        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
-        if (user == null)
-        {
-            await SendUserNotFoundStatusAsync(nameof(LeaveRoom));
-            return;
-        }
-        
-        var room = await _roomsRepository.GetByGuid(Guid.Parse(roomId));
-        if (room == null)
-        {
-            await SendRoomNotFoundStatusAsync(nameof(LeaveRoom));
-            return;
-        }
+        var user = await GetUserIfExists(Guid.Parse(userId), nameof(LeaveRoom));
+        var room = await GetRoomIfExists(Guid.Parse(roomId), nameof(LeaveRoom));
+        if(user == null || room == null) return;
 
         room.Users.Remove(user);
         await Groups.RemoveFromGroupAsync(user.ConnectionId, roomId);
@@ -143,11 +106,12 @@ public class ChatHub : Hub
         {
             Id = Guid.NewGuid(),
             Name = login,
-            ConnectionId = Context.ConnectionId
+            ConnectionId = Context.ConnectionId,
+            Password = string.Empty
         };
-
+        
         await _usersRepository.Add(newUser);
-        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)ResponseType.WithoutErrors, JsonConvert.SerializeObject(newUser));
+        await Clients.Caller.SendAsync($"{nameof(LoginUser)}{ReceivePrefix}", (int)ResponseType.WithoutErrors, newUser.ToJson());
         await Groups.AddToGroupAsync(Context.ConnectionId, DefaultGroup);
     }
 
@@ -175,12 +139,8 @@ public class ChatHub : Hub
     {
         if(name == string.Empty) return;
         
-        var user = await _usersRepository.GetByGuid(Guid.Parse(userId));
-        if (user == null)
-        {
-            await SendUserNotFoundStatusAsync(nameof(CreateRoom));
-            return;
-        }
+        var user = await GetUserIfExists(Guid.Parse(userId), nameof(CreateRoom));
+        if(user == null) return;
         
         var findRoom = await _roomsRepository.GetByName(name);
         if (findRoom != null)
@@ -188,23 +148,8 @@ public class ChatHub : Hub
             await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", ResponseType.RoomExists);
             return;
         }
-        
-        var room = new Room()
-        {
-            Name = name,
-            Id = Guid.NewGuid(),
-            Messages = new List<Message>(),
-            Users = new List<User>(),
-            User = user,
-            WithPassword = false,
-            Password = string.Empty,
-        };
 
-        if (withPassword)
-        {
-            room.Password = password;
-            room.WithPassword = withPassword;
-        }
+        var room = Room.BuildRoom(user, name, withPassword, password);
 
         await _roomsRepository.Add(room);
         await Clients.Caller.SendAsync($"{nameof(CreateRoom)}{ReceivePrefix}", ResponseType.RoomCreated);
@@ -217,6 +162,10 @@ public class ChatHub : Hub
         var json = JsonConvert.SerializeObject(rooms);
         await Clients.Caller.SendAsync($"{nameof(GetRooms)}{ReceivePrefix}", json);
     }
+
+    #endregion
+
+    #region Overrided Methods
 
     public override async Task OnConnectedAsync()
     {
@@ -238,6 +187,26 @@ public class ChatHub : Hub
 
         await RemoveUserFromAllGroupsAsync(user);
         await RemoveUserFromAllRoomsAsync(user);
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private async Task<User?> GetUserIfExists(Guid guid, string methodToSendError)
+    {
+        var user = await _usersRepository.GetByGuid(guid);
+        if (user != null) return user;
+        await SendUserNotFoundStatusAsync(methodToSendError);
+        return null;
+    }
+
+    private async Task<Room?> GetRoomIfExists(Guid guid, string methodToSendError)
+    {
+        var room = await _roomsRepository.GetByGuid(guid);
+        if (room != null) return room;
+        await SendRoomNotFoundStatusAsync(nameof(LeaveRoom));
+        return null;
     }
 
     private async Task SendIncorrectPassword(string method)
@@ -281,18 +250,12 @@ public class ChatHub : Hub
 
     private async Task SendSystemMessageAsync(Room room, User user, string msg)
     {
-        var message = new Message()
-        {
-            Content = msg,
-            User = await _usersRepository.GetSystemUser(),
-            Id = Guid.NewGuid(),
-            UnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
-            Room = room
-        };
-        
-        var json = JsonConvert.SerializeObject(message);
-        
+        var systemUser = await _usersRepository.GetSystemUser();
+        var message = Message.BuildMessageNowTime(systemUser, room, msg);
+
         await _messagesRepository.Add(message);
-        await Clients.Group(room.Id.ToString()).SendAsync($"SendMessageToRoom{ReceivePrefix}", json);
+        await Clients.Group(room.Id.ToString()).SendAsync($"SendMessageToRoom{ReceivePrefix}", message.ToJson());
     }
+
+    #endregion
 }

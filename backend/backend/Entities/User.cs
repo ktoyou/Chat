@@ -1,8 +1,9 @@
+using backend.Interfaces;
 using Newtonsoft.Json;
 
 namespace backend.Entities;
 
-public class User
+public class User : IConvertibleToJson
 {
     [JsonProperty("id")]
     public Guid Id { get; set; }
@@ -15,4 +16,6 @@ public class User
 
     [JsonProperty("connectionId")]
     public string ConnectionId { get; set; }
+
+    public string ToJson() => JsonConvert.SerializeObject(this);
 }
