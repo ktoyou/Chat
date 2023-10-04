@@ -10,6 +10,9 @@ public class User
     [JsonProperty("name")]
     public string Name { get; set; }
 
+    [JsonIgnore]
+    public string Password { get; set; }
+
     [JsonProperty("connectionId")]
     public string ConnectionId { get; set; }
 }

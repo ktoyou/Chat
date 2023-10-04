@@ -32,7 +32,8 @@ public class DbApplicationContext : DbContext
         {
             Id = Guid.NewGuid(),
             Name = "System",
-            ConnectionId = "none"
+            ConnectionId = "none",
+            Password = Guid.NewGuid().ToString()
         });
         base.OnModelCreating(modelBuilder);
     }

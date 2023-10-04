@@ -18,3 +18,15 @@
 	@apply text-white font-bold mb-12 text-center;
 	font-size: 30px;
 }
+
+.register_block {
+	@apply flex
+}
+
+.register_account_no_account {
+	@apply text-white mr-2
+}
+
+.register_account_button {
+	@apply text-blue-500
+}

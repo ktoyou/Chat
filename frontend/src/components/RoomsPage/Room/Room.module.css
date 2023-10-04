@@ -9,7 +9,7 @@
 }
 
 .room_online {
-	@apply text-white opacity-70;
+	@apply text-white opacity-70
 }
 
 .with_password {

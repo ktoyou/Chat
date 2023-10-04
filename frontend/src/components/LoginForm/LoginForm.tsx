@@ -11,6 +11,8 @@ import UserContext from "../../context/UserContext";
 
 const LoginForm = (): ReactElement => {
   const [login, setLogin] = useState<string>();
+  const [password, setPassword] = useState<string>();
+
   const context = useContext(WebSocketContext.wsContext);
   const clientContext = useContext(ClientContext.Context);
   const userContext = useContext(UserContext.UserContext);
@@ -35,11 +37,22 @@ const LoginForm = (): ReactElement => {
               onChange={(e) => setLogin(e.target.value)}
               placeholder="Имя пользователя"
             />
+            <PrimaryInput
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Пароль"
+              type="password"
+            />
           </div>
           <PrimaryButton
             onClick={(e) => context.invoke("LoginUser", login)}
             text="Войти"
           />
+          <div className={styles.register_block}>
+            <p className={styles.register_account_no_account}>Нет аккаунта?</p>
+            <button className={styles.register_account_button}>
+              Зарегистрироваться
+            </button>
+          </div>
         </div>
       </div>
     </div>
